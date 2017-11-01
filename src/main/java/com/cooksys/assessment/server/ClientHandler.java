@@ -6,6 +6,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +20,8 @@ public class ClientHandler implements Runnable {
 	private Logger log = LoggerFactory.getLogger(ClientHandler.class);
 
 	private Socket socket;
+	
+	private Map<String, String> connectedUsers = new HashMap<String, String>(); // map that contains all connected users
 
 	public ClientHandler(Socket socket) {
 		super();
@@ -37,9 +42,12 @@ public class ClientHandler implements Runnable {
 				switch (message.getCommand()) {
 					case "connect":
 						log.info("user <{}> connected", message.getUsername());
+						connectedUsers.put(message.getUsername(), message.getContents()); // add to connectedUsers
+						log.info("user <{}> connected", connectedUsers.keySet());
 						break;
 					case "disconnect":
 						log.info("user <{}> disconnected", message.getUsername());
+						connectedUsers.remove(message.getUsername()); // remove from connectedUsers
 						this.socket.close();
 						break;
 					case "echo":
@@ -48,6 +56,17 @@ public class ClientHandler implements Runnable {
 						writer.write(response);
 						writer.flush();
 						break;
+					case "broadcast":
+						log.info("user <{}> broadcasted message <{}>", message.getUsername(), message.getContents());
+						String msg = mapper.writeValueAsString(message);
+						writer.write(msg);
+						writer.flush();
+						break;
+					case "@username":
+						break;
+					case "users":
+						log.info("user <{}> connected users <{}>", connectedUsers);
+						break;
 				}
 			}
 
@@ -55,5 +74,7 @@ public class ClientHandler implements Runnable {
 			log.error("Something went wrong :/", e);
 		}
 	}
+	
 
 }
+
