@@ -13,11 +13,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cooksys.assessment.model.Message;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ClientHandler implements Runnable {
@@ -25,9 +28,9 @@ public class ClientHandler implements Runnable {
 
 	private Socket socket;
 	
-	private Map<String, PrintWriter> connectedUsers = new HashMap<String, PrintWriter>(); // map that contains all connected users
+	private ConcurrentHashMap<String, PrintWriter> connectedUsers = new ConcurrentHashMap<String, PrintWriter>(); // map that contains all connected users
 	
-	private Queue<Message> mList = new PriorityQueue<Message>(); // contains all messages in order of sending
+	private ConcurrentLinkedQueue<Message> mList = new ConcurrentLinkedQueue<Message>(); // contains all messages in order of sending, may not need?
 
 	public ClientHandler(Socket socket) {
 		super();
@@ -35,14 +38,16 @@ public class ClientHandler implements Runnable {
 		//this.connectedUsers = cU;
 	}
 	
+			
 	//returns list of connected users 
-	public String getUsers(Map<String, PrintWriter> CU) {
+	public String getUsers() {
 		String s = new String();
-		for(String user : CU.keySet()) {
+		for(String user : this.connectedUsers.keySet()) {
 			s = s + " < " + user +  " > online" + "\n";
 			} 
 		return s;
 	}
+	
 
 	public void run() {
 		try {
@@ -66,15 +71,37 @@ public class ClientHandler implements Runnable {
 						String a = mapper.writeValueAsString(message);
 						writer.write(a);
 						writer.flush();
+						// send message to all connected users
+						for (String user : connectedUsers.keySet()) {
+							/*if (user.equals(message.getUsername())) {
+
+							} else {*/
+								PrintWriter sendWriter = connectedUsers.get(user);
+								String sendM = mapper.writeValueAsString(message);
+								sendWriter.write(sendM);
+								sendWriter.flush();
+							//}
+						}
 						break; 
 					case "disconnect":
 						log.info("user <{}> disconnected", message.getUsername());
 						connectedUsers.remove(message.getUsername()); // remove from connectedUsers
 						message.setContents(currentTime + " <" + message.getUsername() + "> has disconnected");
 						mList.add(message);
-						String b = mapper.writeValueAsString(message);
+						/*String b = mapper.writeValueAsString(message);
 						writer.write(b);
-						writer.flush();
+						writer.flush();*/
+						// send message to all connected users
+						for (String user : connectedUsers.keySet()) {
+							/*if (user.equals(message.getUsername())) {
+
+							} else {*/
+								PrintWriter sendWriter = connectedUsers.get(user);
+								String sendM = mapper.writeValueAsString(message);
+								sendWriter.write(sendM);
+								sendWriter.flush();
+							//}
+						}
 						this.socket.close();
 						break;
 					case "echo":
@@ -91,6 +118,17 @@ public class ClientHandler implements Runnable {
 						String c = mapper.writeValueAsString(message);
 						writer.write(c);
 						writer.flush();
+						// send message to all connected users
+						for (String user : connectedUsers.keySet()) {
+							/*if (user.equals(message.getUsername())) {
+
+							} else {*/
+								PrintWriter sendWriter = connectedUsers.get(user);
+								String sendM = mapper.writeValueAsString(message);
+								sendWriter.write(sendM);
+								sendWriter.flush();
+							//}
+						}
 						break;
 					case "@":
 						log.info("user <{}> sent a message to ", message.getUsername());
@@ -98,7 +136,7 @@ public class ClientHandler implements Runnable {
 						break;
 					case "users":
 						log.info("user <{}> wants to know the currently connected users", message.getUsername());
-						message.setContents(currentTime + " Currently connected users: \n " + getUsers(connectedUsers));
+						message.setContents(currentTime + " Currently connected users: \n " + getUsers());
 						String d = mapper.writeValueAsString(message);
 						writer.write(d);
 						writer.flush();
