@@ -28,20 +28,21 @@ cli
 
     server.on('data', (buffer) => {
       //this.log(Message.fromJSON(buffer).toString())
+      let s = Message.fromJSON(buffer).toString()
       let c = Message.fromJSON(buffer).command
 
       if(c === 'connect'){
-        this.log(cli.chalk['gray'](Message.fromJSON(buffer).toString()))
+        this.log(cli.chalk['gray'](s))
       } else if (c === 'disconnect') {
-        this.log(cli.chalk['red'](Message.fromJSON(buffer).toString()))
+        this.log(cli.chalk['red'](s))
       } else if (c === 'echo'){
-      this.log(cli.chalk['magenta'](Message.fromJSON(buffer).toString()))
+      this.log(cli.chalk['yellow'](s))
       } else if (c === 'broadcast'){
-        this.log(cli.chalk['cyan'](Message.fromJSON(buffer).toString()))
+        this.log(cli.chalk['cyan'](s))
       } else if (c === '@'){
-        this.log(cli.chalk['blue'](Message.fromJSON(buffer).toString()))
+        this.log(cli.chalk['blue'](s))
       } else if (c === 'users'){
-        this.log(cli.chalk['white'](Message.fromJSON(buffer).toString()))
+        this.log(cli.chalk['magenta'](s))
       }
     })
 
@@ -58,12 +59,14 @@ cli
       //connectedUsers.splice(indexOfUser, 1)
       server.end(new Message({ username, command }).toJSON() + '\n')
     } else if (command === 'echo') {
-      prevCommand = command
+      //prevCommand = command
+      //console.log(prevCommand)
+      //console.log(contents)
       server.write(new Message({ username, command, contents }).toJSON() + '\n')
     } else if (command === 'broadcast') {
       prevCommand = command
       server.write(new Message({username, command, contents }).toJSON() + '\n')
-    } else if (command === '@username'){
+    } else if (command.includes('@')){
       prevCommand = command
       server.write(new Message({username, command, contents }).toJSON() + '\n')
       callback() 
@@ -71,24 +74,27 @@ cli
       prevCommand = command
       //console.log(connectedUsers)
       server.write(new Message({username, command, contents }).toJSON() + '\n')    
-    }else {
-
-      /*cli
+    }else if (prevCommand !== ' ') {
+     /* cli
       .mode(prevCommand)
-      .delimiter('previous command:')
+      .delimiter(prevCommand)
       .action(function (input, callback) {
         server.write(new Message({username, command, contents }).toJSON() + '\n') */
         
       
-      /*if (prevCommand === 'echo'){
-        //contents = command + contents
-       // command = prevCommand
-        server.write(new Message({username, command, contents }).toJSON() + '\n')
+      if (prevCommand === 'echo'){
+        /*command = prevCommand
+        console.log(command)
+        contents = 'echo' + ' ' + input
+        console.log(contents)*/
+        //command = prevCommand
+        //command = prevCommand
+        server.write(new Message({username, prevCommand, contents }).toJSON() + '\n')
       }else if (prevCommand === 'broadcast'){
         //contents = command + ' ' + contents
        // command = prevCommand
         server.write(new Message({username, command, contents }).toJSON() + '\n')
-      } else if (prevCommand === '@'){
+      } else if (prevCommand.includes('@')){
         //contents = command + ' ' + contents
         //command = prevCommand
         server.write(new Message({username, command, contents }).toJSON() + '\n')
@@ -96,7 +102,9 @@ cli
       } else if (prevCommand === 'users'){
         //contents = command + ' ' + contents
         server.write(new Message({username, command, contents }).toJSON() + '\n')
-      }*/ //else {
+      }  //callback(command)})
+     } 
+      else {
         this.log(`Command <${command}> was not recognized`)
         }
       

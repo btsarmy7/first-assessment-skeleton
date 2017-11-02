@@ -1,8 +1,10 @@
 package com.cooksys.assessment.server;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
@@ -28,7 +30,7 @@ public class Server implements Runnable {
 			
 			while (true) {
 				Socket socket = ss.accept();
-				ClientHandler handler = new ClientHandler(socket);
+				ClientHandler handler = new ClientHandler(socket, new ConcurrentHashMap<String, PrintWriter>());
 				executor.execute(handler);
 			}
 		} catch (IOException e) {

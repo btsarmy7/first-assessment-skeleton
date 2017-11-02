@@ -28,14 +28,13 @@ public class ClientHandler implements Runnable {
 
 	private Socket socket;
 	
-	private ConcurrentHashMap<String, PrintWriter> connectedUsers = new ConcurrentHashMap<String, PrintWriter>(); // map that contains all connected users
+	private ConcurrentHashMap<String, PrintWriter> connectedUsers; // map that contains all connected users
 	
-	private ConcurrentLinkedQueue<Message> mList = new ConcurrentLinkedQueue<Message>(); // contains all messages in order of sending, may not need?
 
-	public ClientHandler(Socket socket) {
+	public ClientHandler(Socket socket, ConcurrentHashMap<String, PrintWriter> CU) {
 		super();
 		this.socket = socket;
-		//this.connectedUsers = cU;
+		this.connectedUsers = CU;
 	}
 	
 			
@@ -65,12 +64,12 @@ public class ClientHandler implements Runnable {
 					case "connect":
 						log.info("user <{}> connected", message.getUsername());
 						connectedUsers.put(message.getUsername(), writer); // add to connectedUsers
-						log.info("user <{}> connected", connectedUsers.keySet());
+						//log.info("user <{}> connected", connectedUsers.keySet());
 						message.setContents(currentTime + " <" + message.getUsername() + "> has connected");
-						mList.add(message);
-						String a = mapper.writeValueAsString(message);
+						
+						/*String a = mapper.writeValueAsString(message);
 						writer.write(a);
-						writer.flush();
+						writer.flush();*/
 						// send message to all connected users
 						for (String user : connectedUsers.keySet()) {
 							/*if (user.equals(message.getUsername())) {
@@ -87,7 +86,7 @@ public class ClientHandler implements Runnable {
 						log.info("user <{}> disconnected", message.getUsername());
 						connectedUsers.remove(message.getUsername()); // remove from connectedUsers
 						message.setContents(currentTime + " <" + message.getUsername() + "> has disconnected");
-						mList.add(message);
+					
 						/*String b = mapper.writeValueAsString(message);
 						writer.write(b);
 						writer.flush();*/
@@ -114,10 +113,10 @@ public class ClientHandler implements Runnable {
 					case "broadcast":
 						log.info("user <{}> broadcasted message <{}>", message.getUsername(), message.getContents());
 						message.setContents(currentTime + " <" + message.getUsername() + "> broadcasted " + message.getContents()); 
-						mList.add(message);
-						String c = mapper.writeValueAsString(message);
+						
+						/*String c = mapper.writeValueAsString(message);
 						writer.write(c);
-						writer.flush();
+						writer.flush();*/
 						// send message to all connected users
 						for (String user : connectedUsers.keySet()) {
 							/*if (user.equals(message.getUsername())) {
@@ -132,10 +131,14 @@ public class ClientHandler implements Runnable {
 						break;
 					case "@":
 						log.info("user <{}> sent a message to ", message.getUsername());
-						mList.add(message);
+						
+						/*PrintWriter sendWriter = connectedUsers.get(user);
+						String sendM = mapper.writeValueAsString(message);
+						sendWriter.write(sendM);
+						sendWriter.flush();*/
 						break;
 					case "users":
-						log.info("user <{}> wants to know the currently connected users", message.getUsername());
+						log.info("user <{}> requested for the currently connected users", message.getUsername());
 						message.setContents(currentTime + " Currently connected users: \n " + getUsers());
 						String d = mapper.writeValueAsString(message);
 						writer.write(d);
