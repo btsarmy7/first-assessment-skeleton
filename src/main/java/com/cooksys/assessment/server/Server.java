@@ -25,6 +25,7 @@ public class Server implements Runnable {
 		ServerSocket ss;
 		try {
 			ss = new ServerSocket(this.port);
+			
 			while (true) {
 				Socket socket = ss.accept();
 				ClientHandler handler = new ClientHandler(socket);
