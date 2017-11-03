@@ -43,6 +43,8 @@ cli
       //this.log(Message.fromJSON(buffer).toString())
       let s = Message.fromJSON(buffer).toString()
       let c = Message.fromJSON(buffer).command
+        if(c.charAt(0) == '@')
+            c = c.charAt(0).toString();
 
       if(c === 'connect'){
         this.log(cli.chalk['gray'](s))
@@ -67,40 +69,41 @@ cli
   .action(function (input, callback) {
 
 	/*
-	 * words() automatically trim @ so keep it first
+	 * words() trims the @, so save it for future use
 	 */
 	let fstChar = input.charAt(0).toString()
 
     let [ command, ...rest ] = words(input)
     let contents = rest.join(' ')
-
+    //console.log(command)
     if ( fstChar === "@" )
     	command = fstChar + command
-
+    
+    
     if (command === 'disconnect') {
         server.end(new Message({ username, command }).toJSON() + '\n')
     } else if ( command === 'echo' ) {
         server.write(new Message({ username, command, contents }).toJSON() + '\n')
-        prevCmd = command
+        prevCmd = command // keep track of previous command
     } else if ( command === 'broadcast' ) {
     	/*
-    	 * broadcast command
+    	 * broadcast command to send message to all connected users
     	 */
     	server.write(new Message({ username, command, contents }).toJSON() + '\n')
     	prevCmd = command
     } else if( command === 'users') {
     	/*
-    	 * users command
+    	 * users command to return all the connected users
     	 */
         server.write(new Message({ username, command, contents }).toJSON() + '\n')
         prevCmd = command
     } else if( command.charAt(0).toString() === '@' ){
     	/*
-    	 * @username command
+    	 * @username command to send private message
     	 */
         server.write(new Message({ username, command, contents }).toJSON() + '\n')
         prevCmd = command
-    } else {
+    } else { // if user doesn't type a command, assume the most recent one
     	if (prevCmd === 'echo') {
             contents = command + contents
             command = prevCmd
